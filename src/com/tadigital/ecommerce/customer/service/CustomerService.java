@@ -1,13 +1,7 @@
 package com.tadigital.ecommerce.customer.service;
 
-import com.tadigital.ecommerce.customer.entity.Customer;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.*;
-
-import com.tadigital.ecommerce.customer.dao.*;
-import com.tadigital.ecommerce.customer.entity.*;
+import java.util.Calendar;
+import java.util.Properties;
 
 import javax.activation.DataHandler;
 import javax.activation.DataSource;
@@ -21,50 +15,55 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
-import javax.servlet.http.Part;
 
+import com.tadigital.ecommerce.customer.dao.CustomerDao;
+import com.tadigital.ecommerce.customer.entity.Customer;
 
 public class CustomerService {
 	CustomerDao customerDao = new CustomerDao();
+	
+	public String getCurrentDate() {
+		Calendar cal = Calendar.getInstance();
 		
+		int dd = cal.get(Calendar.DATE);
+		int mm = cal.get(Calendar.MONTH);
+		mm++;
+		int yyyy = cal.get(Calendar.YEAR);
+		
+		return dd + "-" + mm + "-" + yyyy;
+	}
+	
 	public boolean loginCustomer(Customer customer) {
-		CustomerDao customerDao=new CustomerDao();
 		boolean status = customerDao.selectCustomerByEmailAndPassword(customer);
 		
 		return status;
 	}
 	
-	public boolean registerCustomer(Customer customer) {
-		boolean status = customerDao.insertCustomer(customer);
-		if(status)
-		{
-			sendWelcomeMail(customer.getfName() + " " + customer.getlName(), customer.getEmail());
-		}
+	public boolean checkCustomer(Customer customer) {
+		boolean status = customerDao.selectCustomerByEmail(customer);
 		
-		return status;
+		if(status)
+			return true;
+		else
+			return false;
 	}
 	
-	private String processFileUpload(Collection<Part> partsCollection, String uploadFilePath) {
-		String fileName = "";
+	public boolean changePassword(Customer customer) {
+		boolean status = customerDao.updatePassword(customer);
 		
-		for (Part part : partsCollection) {
-        	String contentDisp = part.getHeader("content-disposition");
-            String[] items = contentDisp.split(";");
-            
-            for (String item : items) {
-                if (item.trim().startsWith("filename")) {
-                    fileName = item.substring(item.indexOf("=") + 2, item.length()-1);
-                    
-                    try {
-						part.write(uploadFilePath + File.separator + fileName);
-					} catch (IOException ioe) {
-						ioe.printStackTrace();
-					}
-                }
-            }          
-        }
-		
-		return fileName;
+		if(status)
+			return true;
+		else
+			return false;
+	}
+	
+	
+	public boolean registerCustomer(Customer customer) {
+		boolean status = customerDao.insertCustomer(customer);
+		if(status) {
+			sendWelcomeMail(customer.getFirstName() + " " + customer.getLastName(), customer.getEmail());
+		}
+		return status;
 	}
 	
 	public String sendWelcomeMail(String name, String email) {
@@ -81,14 +80,13 @@ public class CustomerService {
 		//CONNECT TO MAIL SERVER
 		Session session = Session.getDefaultInstance(properties,new javax.mail.Authenticator() {
 																	protected PasswordAuthentication getPasswordAuthentication() {
-																		return new PasswordAuthentication("jaindes@gmail.com","pleasesmile");
+																		return new PasswordAuthentication("jaivikas7@gmail.com","Vikas@1998@");
 																	}
-															});
-
+																});
 		try {
 			//COMPOSE MESSAGE
 			MimeMessage mimeMessage = new MimeMessage(session);
-			mimeMessage.setFrom(new InternetAddress("jaindes@gmail.com"));
+			mimeMessage.setFrom(new InternetAddress("jaivikas7@gmail.com"));
 			mimeMessage.setRecipients(Message.RecipientType.TO,	InternetAddress.parse(email));
 			mimeMessage.setSubject("Welcome to the world of TA Digital!");
 			MimeMultipart mp = new MimeMultipart();
@@ -104,19 +102,18 @@ public class CustomerService {
 			mp.addBodyPart(mbp1);
 			
 			mbp1 = new MimeBodyPart();
-			DataSource fds = new FileDataSource("D://Trainee Engineers March 2019/workspase/TrainingProject_Swapnil/WebContent/images/logo.png");
+			DataSource fds = new FileDataSource("D://Trainee Engineers March 2019/workspace/TrainingProject_Vikas/WebContent/images/logo.png");
 			mbp1.setDataHandler(new DataHandler(fds));
 			mbp1.setHeader("Content-ID", "<image>");
 			mp.addBodyPart(mbp1);
 			
 			mbp1 = new MimeBodyPart();
-			fds = new FileDataSource("D://Trainee Engineers March 2019/workspase/TrainingProject_Swapnil/WebContent/images/welcome.png");
+			fds = new FileDataSource("D://Trainee Engineers March 2019/workspace/TrainingProject_Vikas/WebContent/images/welcome.jpg");
 			mbp1.setDataHandler(new DataHandler(fds));
 			mbp1.setHeader("Content-ID", "<image1>");
 			mp.addBodyPart(mbp1);
 				
-			mimeMessage.setContent(mp)
-;
+			mimeMessage.setContent(mp);
 				
 
 			//SEND MAIL
@@ -128,8 +125,5 @@ public class CustomerService {
 		}
 		
 		return status;
-	
 	}
-
-	
 }
